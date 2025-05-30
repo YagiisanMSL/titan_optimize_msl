@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Debuffs Titan - Monster Super League V22</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .version-info {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        
+        .team-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+        
+        .team-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .monster-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        @media (max-width: 1200px) {
+            .monster-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .monster-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .monster-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            transition: transform 0.2s;
+            min-width: 0; /* Permet la réduction de taille */
+        }
+        
+        .monster-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .monster-header {
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .skill-section {
+            margin: 8px 0;
+        }
+        
+        .skill-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            display: inline-block;
+        }
+        
+        .probability-display {
+            display: inline-block;
+            margin-left: 5px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 0 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .result-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-percentage {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .result-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .turn-selector {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .turn-selector label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .simulation-info {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐉 Calculateur de Debuffs Titan</h1>
+        
+        <div class="version-info">
+            <strong>Version 22 Stable</strong> | Monster Super League | 
+            Calculateur de probabilités pour raids Titan
+        </div>
+        
+        <div class="simulation-info">
+            <strong>ℹ️ Comment ça fonctionne :</strong><br>
+            • 2 boules bleues par équipe par tour (4 boules au total)<br>
+            • <strong>IMPORTANT :</strong> Si un monstre reçoit une boule bleue, seul son talent actif peut proc (le passif est bloqué)<br>
+            • Les debuffs se réinitialisent à leur durée max quand ils passent<br>
+            • Les Titans ont une résistance : Dark/Feu/Eau/Bois (15%), Light (30%)
+        </div>
+        
+        <div class="team-section">
+            <div class="team-title">🏛️ Sélection du Titan</div>
+            <div style="text-align: center; margin: 20px 0;">
+                <select id="titanSelect" style="width: 200px; padding: 10px; font-size: 16px;">
+                    <option value="15">🔥 Titan Feu (15% résistance)</option>
+                    <option value="15">💧 Titan Eau (15% résistance)</option>
+                    <option value="15">🌿 Titan Bois (15% résistance)</option>
+                    <option value="15">🌑 Titan Dark (15% résistance)</option>
+                    <option value="30">💡 Titan Light (30% résistance)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="team-section">
+            <div class="team-title">👥 Équipe 1</div>
+            <div class="monster-grid" id="team1"></div>
+        </div>
+        
+        <div class="team-section">
+            <div class="team-title">👥 Équipe 2</div>
+            <div class="monster-grid" id="team2"></div>
+        </div>
+        
+        <div class="turn-selector">
+            <label for="turnNumber">Tour à analyser :</label>
+            <input type="number" id="turnNumber" value="1" min="1" max="20" style="width: 80px;">
+        </div>
+        
+        <div class="controls">
+            <button onclick="calculateProbabilities()">🧮 Calculer les Probabilités</button>
+            <button onclick="runSimulation()">🎲 Simulation Monte Carlo</button>
+        </div>
+        
+        <div class="results" id="results" style="display: none;">
+            <h3>📊 Résultats pour le tour <span id="currentTurn">1</span></h3>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+        
+        <div class="footer">
+            <p>🎮 <strong>Monster Super League - Calculateur Titan V22</strong></p>
+            <p>Développé pour optimiser vos compositions d'équipe Titan</p>
+            <p>Prend en compte : Boules bleues, résistances, durées, réinitialisations</p>
+        </div>
+    </div>
+
+    <script>
+        const debuffTypes = ['ATK Down', 'DEF Down', 'Affaiblissement', 'Faiblesse Exposée', 'Aucun'];
+        
+        // Initialisation des équipes
+        function initializeTeams() {
+            createTeam('team1', 1);
+            createTeam('team2', 2);
+        }
+        
+        function createTeam(containerId, teamNumber) {
+            const container = document.getElementById(containerId);
+            for (let i = 1; i <= 4; i++) {
+                const monsterCard = document.createElement('div');
+                monsterCard.className = 'monster-card';
+                monsterCard.innerHTML = `
+                    <div class="monster-header">Monstre ${teamNumber}.${i}</div>
+                    
+                    <div class="skill-section">
+                        <div class="skill-title">🔮 Talent Passif</div>
+                        <select id="passif_type_${teamNumber}_${i}">
+                            ${debuffTypes.map(type => `<option value="${type}">${type}</option>`).join('')}
+                        </select>
+                        <div style="display: flex; gap: 3px; align-items: center;">
+                            <input type="number" id="passif_prob_${teamNumber}_${i}" 
+                                   value="0" min="0" max="100" placeholder="%" 
+                                   onchange="updateProbabilityDisplay(this, 'passif_display_${teamNumber}_${i}')"
+                                   style="width: 45px;">
+                            <span class="probability-display" id="passif_display_${teamNumber}_${i}">0%</span>
+                            <select id="passif_duration_${teamNumber}_${i}" style="width: 70px;">
+                                <option value="1">1T</option>
+                                <option value="2">2T</option>
+                                <option value="3">3T</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="skill-section">
+                        <div class="skill-title">⚡ Talent Actif (Boule Bleue)</div>
+                        <select id="actif_type_${teamNumber}_${i}">
+                            ${debuffTypes.map(type => `<option value="${type}">${type}</option>`).join('')}
+                        </select>
+                        <div style="display: flex; gap: 3px; align-items: center;">
+                            <input type="number" id="actif_prob_${teamNumber}_${i}" 
+                                   value="0" min="0" max="100" placeholder="%" 
+                                   onchange="updateProbabilityDisplay(this, 'actif_display_${teamNumber}_${i}')"
+                                   style="width: 45px;">
+                            <span class="probability-display" id="actif_display_${teamNumber}_${i}">0%</span>
+                            <select id="actif_duration_${teamNumber}_${i}" style="width: 70px;">
+                                <option value="1">1T</option>
+                                <option value="2">2T</option>
+                                <option value="3">3T</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(monsterCard);
+            }
+        }
+        
+        function updateProbabilityDisplay(input, displayId) {
+            document.getElementById(displayId).textContent = input.value + '%';
+        }
+        
+        // Collecte des données des monstres
+        function getMonsterData() {
+            const monsters = [];
+            for (let team = 1; team <= 2; team++) {
+                for (let monster = 1; monster <= 4; monster++) {
+                    monsters.push({
+                        id: `${team}_${monster}`,
+                        team,
+                        passif: {
+                            type: document.getElementById(`passif_type_${team}_${monster}`).value,
+                            probability: parseFloat(document.getElementById(`passif_prob_${team}_${monster}`).value) / 100,
+                            duration: parseInt(document.getElementById(`passif_duration_${team}_${monster}`).value)
+                        },
+                        actif: {
+                            type: document.getElementById(`actif_type_${team}_${monster}`).value,
+                            probability: parseFloat(document.getElementById(`actif_prob_${team}_${monster}`).value) / 100,
+                            duration: parseInt(document.getElementById(`actif_duration_${team}_${monster}`).value)
+                        }
+                    });
+                }
+            }
+            return monsters;
+        }
+        
+        // Calcul des probabilités
+        function calculateProbabilities() {
+            const monsters = getMonsterData();
+            const targetTurn = parseInt(document.getElementById('turnNumber').value);
+            
+            // Calcul des probabilités de debuff pour le tour ciblé
+            const results = calculateDebuffProbabilities(monsters, targetTurn);
+            
+            displayResults(results, targetTurn);
+        }
+        
+        function calculateDebuffProbabilities(monsters, targetTurn) {
+            // Récupérer la résistance du Titan
+            const titanResistance = parseFloat(document.getElementById('titanSelect').value) / 100;
+            
+            // Calcul des probabilités cumulées avec résistance et réinitialisation des debuffs
+            const debuffProbabilities = {
+                'ATK Down': 0,
+                'DEF Down': 0,
+                'Affaiblissement': 0,
+                'Faiblesse Exposée': 0
+            };
+            
+            // Pour chaque type de debuff, calculer la probabilité qu'il soit actif au tour donné
+            Object.keys(debuffProbabilities).forEach(debuffType => {
+                debuffProbabilities[debuffType] = calculateSingleDebuffProbability(
+                    monsters, debuffType, targetTurn, titanResistance
+                );
+            });
+            
+            return debuffProbabilities;
+        }
+        
+        function calculateSingleDebuffProbability(monsters, debuffType, targetTurn, titanResistance) {
+            // Utilisation d'une simulation pour gérer la réinitialisation des debuffs
+            const iterations = 10000;
+            let successCount = 0;
+            
+            for (let iteration = 0; iteration < iterations; iteration++) {
+                let debuffRemaining = 0;
+                
+                for (let turn = 1; turn <= targetTurn; turn++) {
+                    // Décrémenter le debuff existant
+                    if (debuffRemaining > 0) {
+                        debuffRemaining--;
+                    }
+                    
+                    // Simuler la distribution des boules bleues pour cette itération
+                    const team1BlueBalls = [];
+                    for (let i = 0; i < 2; i++) {
+                        team1BlueBalls.push(Math.floor(Math.random() * 4));
+                    }
+                    const team2BlueBalls = [];
+                    for (let i = 0; i < 2; i++) {
+                        team2BlueBalls.push(Math.floor(Math.random() * 4));
+                    }
+                    
+                    let debuffApplied = false;
+                    let maxDuration = 0;
+                    
+                    // Vérifier chaque monstre
+                    monsters.forEach((monster, index) => {
+                        if (monster.passif.type !== debuffType && monster.actif.type !== debuffType) {
+                            return; // Ce monstre ne peut pas appliquer ce debuff
+                        }
+                        
+                        const teamIndex = Math.floor(index / 4); // 0 pour équipe 1, 1 pour équipe 2
+                        const monsterInTeam = index % 4;
+                        const receivedBlueBall = teamIndex === 0 ? 
+                            team1BlueBalls.includes(monsterInTeam) : 
+                            team2BlueBalls.includes(monsterInTeam);
+                        
+                        if (receivedBlueBall) {
+                            // Boule bleue reçue : seul le talent actif peut proc
+                            if (monster.actif.type === debuffType) {
+                                const effectiveChance = monster.actif.probability * (1 - titanResistance);
+                                if (Math.random() < effectiveChance) {
+                                    debuffApplied = true;
+                                    maxDuration = Math.max(maxDuration, monster.actif.duration);
+                                }
+                            }
+                        } else {
+                            // Pas de boule bleue : seul le talent passif peut proc
+                            if (monster.passif.type === debuffType) {
+                                const effectiveChance = monster.passif.probability * (1 - titanResistance);
+                                if (Math.random() < effectiveChance) {
+                                    debuffApplied = true;
+                                    maxDuration = Math.max(maxDuration, monster.passif.duration);
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Appliquer le debuff si au moins un a proc
+                    if (debuffApplied) {
+                        debuffRemaining = maxDuration;
+                    }
+                }
+                
+                // Vérifier si le debuff est actif au tour cible
+                if (debuffRemaining > 0) {
+                    successCount++;
+                }
+            }
+            
+            return (successCount / iterations) * 100;
+        }
+        
+        // Simulation Monte Carlo pour validation
+        function runSimulation() {
+            const monsters = getMonsterData();
+            const targetTurn = parseInt(document.getElementById('turnNumber').value);
+            const iterations = 10000;
+            
+            const successCounts = {
+                'ATK Down': 0,
+                'DEF Down': 0,
+                'Affaiblissement': 0,
+                'Faiblesse Exposée': 0
+            };
+            
+            for (let i = 0; i < iterations; i++) {
+                // Simuler tous les tours jusqu'au tour ciblé
+                const debuffStates = simulateMultipleTurns(monsters, targetTurn);
+                
+                Object.keys(successCounts).forEach(debuff => {
+                    if (debuffStates[debuff]) {
+                        successCounts[debuff]++;
+                    }
+                });
+            }
+            
+            const results = {};
+            Object.keys(successCounts).forEach(debuff => {
+                results[debuff] = (successCounts[debuff] / iterations) * 100;
+            });
+            
+            displayResults(results, targetTurn, true);
+        }
+        
+        function simulateMultipleTurns(monsters, targetTurn) {
+            // Récupérer la résistance du Titan
+            const titanResistance = parseFloat(document.getElementById('titanSelect').value) / 100;
+            
+            // État des debuffs actifs (type -> tours restants)
+            const activeDebuffs = {
+                'ATK Down': 0,
+                'DEF Down': 0,
+                'Affaiblissement': 0,
+                'Faiblesse Exposée': 0
+            };
+            
+            for (let turn = 1; turn <= targetTurn; turn++) {
+                // Décrémenter la durée des debuffs existants
+                Object.keys(activeDebuffs).forEach(debuff => {
+                    if (activeDebuffs[debuff] > 0) {
+                        activeDebuffs[debuff]--;
+                    }
+                });
+                
+                // Simuler les nouveaux debuffs du tour
+                const newDebuffs = simulateTurnDebuffs(monsters, titanResistance);
+                
+                // Appliquer les nouveaux debuffs (réinitialisation à durée max)
+                Object.keys(newDebuffs).forEach(debuff => {
+                    if (newDebuffs[debuff].applied) {
+                        activeDebuffs[debuff] = newDebuffs[debuff].duration;
+                    }
+                });
+            }
+            
+            // Retourner l'état final (true si debuff actif)
+            const finalState = {};
+            Object.keys(activeDebuffs).forEach(debuff => {
+                finalState[debuff] = activeDebuffs[debuff] > 0;
+            });
+            
+            return finalState;
+        }
+        
+        function simulateTurnDebuffs(monsters, titanResistance) {
+            const appliedDebuffs = {
+                'ATK Down': { applied: false, duration: 0 },
+                'DEF Down': { applied: false, duration: 0 },
+                'Affaiblissement': { applied: false, duration: 0 },
+                'Faiblesse Exposée': { applied: false, duration: 0 }
+            };
+            
+            // Distribution des boules bleues par équipe
+            const team1BlueBalls = [];
+            for (let i = 0; i < 2; i++) {
+                team1BlueBalls.push(Math.floor(Math.random() * 4));
+            }
+            const team2BlueBalls = [];
+            for (let i = 0; i < 2; i++) {
+                team2BlueBalls.push(Math.floor(Math.random() * 4));
+            }
+            
+            // Traitement de tous les monstres
+            monsters.forEach((monster, index) => {
+                const teamIndex = Math.floor(index / 4); // 0 pour équipe 1, 1 pour équipe 2
+                const monsterInTeam = index % 4;
+                const receivedBlueBall = teamIndex === 0 ? 
+                    team1BlueBalls.includes(monsterInTeam) : 
+                    team2BlueBalls.includes(monsterInTeam);
+                
+                if (receivedBlueBall) {
+                    // Boule bleue reçue : seul le talent actif peut proc
+                    if (monster.actif.type !== 'Aucun') {
+                        const effectiveChance = monster.actif.probability * (1 - titanResistance);
+                        if (Math.random() < effectiveChance) {
+                            appliedDebuffs[monster.actif.type].applied = true;
+                            appliedDebuffs[monster.actif.type].duration = monster.actif.duration;
+                        }
+                    }
+                } else {
+                    // Pas de boule bleue : seul le talent passif peut proc
+                    if (monster.passif.type !== 'Aucun') {
+                        const effectiveChance = monster.passif.probability * (1 - titanResistance);
+                        if (Math.random() < effectiveChance) {
+                            appliedDebuffs[monster.passif.type].applied = true;
+                            appliedDebuffs[monster.passif.type].duration = monster.passif.duration;
+                        }
+                    }
+                }
+            });
+            
+            return appliedDebuffs;
+        }
+        
+        function displayResults(results, turn, isSimulation = false) {
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('currentTurn').textContent = turn;
+            
+            const resultsGrid = document.getElementById('resultsGrid');
+            resultsGrid.innerHTML = '';
+            
+            Object.entries(results).forEach(([debuff, probability]) => {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card';
+                resultCard.innerHTML = `
+                    <div class="result-percentage">${probability.toFixed(1)}%</div>
+                    <div class="result-label">${debuff}${isSimulation ? ' (Simulation)' : ''}</div>
+                `;
+                resultsGrid.appendChild(resultCard);
+            });
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTeams();
+        });
+    </script>
+</body>
+</html>
